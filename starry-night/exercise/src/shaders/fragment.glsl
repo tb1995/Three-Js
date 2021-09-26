@@ -30,10 +30,9 @@ void main() {
     // same as above, but thinner white lines
     // strength = step(mod(vUv.y * 10.0, 1.0), 0.2);
 
-    strength = step(mod(vUv.x * 10.0, 1.0), 0.2);
+  //  strength = step(mod(vUv.x * 10.0, 1.0), 0.2);
 
-    gl_FragColor = vec4(strength, strength, strength, 1.0);
-
+    gl_FragColor = vec4(0.1607, 0.3686, 0.5686, 1.0);
 
 
 }

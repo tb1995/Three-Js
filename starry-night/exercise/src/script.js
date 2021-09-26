@@ -15,6 +15,14 @@ const gui = new dat.GUI();
 // Canvas
 const canvas = document.querySelector("canvas.webgl");
 
+/**
+ * Sizes
+ */
+const sizes = {
+  width: window.innerWidth,
+  height: window.innerHeight,
+};
+
 // Scene
 const scene = new THREE.Scene();
 
@@ -24,9 +32,82 @@ const scene = new THREE.Scene();
 const textureLoader = new THREE.TextureLoader();
 // const particleTexture = textureLoader.load('/textures/particles/11.png')
 
+/**
+ * Renderer
+ */
+const renderer = new THREE.WebGLRenderer({
+  canvas: canvas,
+});
+renderer.setSize(sizes.width, sizes.height);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
 let uTime = 0;
 
-const geometry = new THREE.PlaneGeometry(30, 30, 32, 32);
+const parameters = {};
+parameters.count = 1000;
+parameters.size = 0.02;
+parameters.radius = 3;
+
+/**
+ * Material
+ */
+let pointsMaterial = new THREE.ShaderMaterial({
+  // color: 0xffffff,
+  vertexColors: true,
+  depthWrite: false,
+  blending: THREE.AdditiveBlending,
+  transparent: false,
+  vertexShader: vertexShader,
+  fragmentShader: fragmentShader,
+  uniforms: {
+    uTime: { value: uTime },
+    uSize: { value: parameters.size * renderer.getPixelRatio() },
+  },
+});
+
+/**
+ * Points
+ */
+
+let points = null;
+let pointsGeometry = null;
+
+const generateGalaxy = () => {
+  pointsGeometry = new THREE.BufferGeometry();
+
+  /**
+   * Reset
+   */
+  if (points !== null) {
+    backgroundGeometry.dispose();
+    scene.remove(points);
+  }
+
+  let positions = new Float32Array(parameters.count * 3);
+  const scales = new Float32Array(parameters.count * 1);
+
+  for (let i = 0; i < parameters.count; i++) {
+    const i3 = i * 3;
+    const radius = Math.random() * parameters.radius;
+
+    positions[i3] = radius;
+    positions[i3 + 1] = (Math.random() - 0.5) * 3;
+    positions[i3 + 2] = Math.random() + 1.5;
+    scales[i] = Math.random();
+  }
+
+  pointsGeometry.setAttribute(
+    "position",
+    new THREE.BufferAttribute(positions, 3)
+  );
+  pointsGeometry.setAttribute("aScale", new THREE.BufferAttribute(scales, 1));
+
+  points = new THREE.Points(pointsGeometry, pointsMaterial);
+
+  scene.add(points);
+};
+
+const backgroundGeometry = new THREE.PlaneGeometry(30, 30, 32, 32);
 
 // const material = new THREE.ShaderMaterial({
 //     depthWrite: false,
@@ -44,16 +125,8 @@ const material = new THREE.MeshBasicMaterial({
 });
 
 const createShaders = () => {
-  const mesh = new THREE.Mesh(geometry, material);
-  scene.add(mesh);
-};
-
-/**
- * Sizes
- */
-const sizes = {
-  width: window.innerWidth,
-  height: window.innerHeight,
+  const mesh = new THREE.Mesh(backgroundGeometry, material);
+  // scene.add(mesh);
 };
 
 window.addEventListener("resize", () => {
@@ -89,15 +162,6 @@ const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true;
 
 /**
- * Renderer
- */
-const renderer = new THREE.WebGLRenderer({
-  canvas: canvas,
-});
-renderer.setSize(sizes.width, sizes.height);
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-
-/**
  * Animate
  */
 const clock = new THREE.Clock();
@@ -106,7 +170,7 @@ const tick = () => {
   const elapsedTime = clock.getElapsedTime();
 
   //uTime
-  //   uTime = material.uniforms.uTime.value = elapsedTime;
+  pointsMaterial.uniforms.uTime.value = elapsedTime;
   // Update controls
   controls.update();
 
@@ -117,5 +181,10 @@ const tick = () => {
   window.requestAnimationFrame(tick);
 };
 
+gui.add(parameters, "count", 1000, 1000000, 100).onFinishChange(generateGalaxy);
+gui.add(parameters, "size", 0.01, 2.0, 0.01).onFinishChange(generateGalaxy);
+gui.add(parameters, "radius", 0.1, 10.0, 0.1).onFinishChange(generateGalaxy);
+
 createShaders();
+generateGalaxy();
 tick();
