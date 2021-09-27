@@ -171,6 +171,7 @@ const tick = () => {
 
   //uTime
   pointsMaterial.uniforms.uTime.value = elapsedTime;
+  console.log(elapsedTime);
   // Update controls
   controls.update();
 
